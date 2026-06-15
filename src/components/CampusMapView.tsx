@@ -81,9 +81,10 @@ export default function CampusMapView({ standalone, onClose }: CampusMapViewProp
         17
       );
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; <a href=\"https://openstreetmap.org/copyright\">OpenStreetMap</a>",
-        maxZoom: 19,
+      L.tileLayer("https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
+        attribution: "&copy; Google",
+        subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        maxZoom: 20,
       }).addTo(map);
 
       SECTIONS.forEach((s) => {
