@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Medbot RAG Assistant</string>
+    <string name="title_activity_main">Medbot RAG Assistant</string>
+    <string name="package_name">com.medbotv2.app</string>
+    <string name="custom_url_scheme">com.medbotv2.app</string>
+</resources>
