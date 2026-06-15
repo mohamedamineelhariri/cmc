@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiFetch } from "@/utils/api";
 import { consumeChatStream } from "@/utils/stream-reader";
-import Link from "next/link";
+import CampusMapView from "@/components/CampusMapView";
 import {
   MessageSquare,
   Plus,
@@ -65,6 +65,7 @@ export default function Home() {
 
   // UI states
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showCampusMap, setShowCampusMap] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [expandedSources, setExpandedSources] = useState<{ [msgId: string]: boolean }>({});
   const [activeFeedbackMsgId, setActiveFeedbackMsgId] = useState<string | null>(null);
@@ -524,13 +525,13 @@ export default function Home() {
             <Plus className="h-4 w-4" />
             <span>Nouvelle Session</span>
           </button>
-          <Link
-            href="/campus"
+          <button
+            onClick={() => setShowCampusMap(true)}
             className="w-full bg-white border border-[var(--border-warm)] hover:bg-[var(--panel-warm)] text-[var(--text-primary)] rounded-xl py-3 px-4 flex items-center justify-center gap-2 shadow-xs transition cursor-pointer active:scale-95 text-xs font-mono uppercase tracking-widest"
           >
             <MapPin className="h-4 w-4" />
             <span>Plan Campus</span>
-          </Link>
+          </button>
         </div>
 
         {/* Scrollable conversation history */}
@@ -613,217 +614,216 @@ export default function Home() {
       {/* 2. CHAT WORKSPACE (Right pane - Scroll area and input console) */}
       <main className="flex-1 flex flex-col bg-[var(--bg-warm)] relative">
 
-        {/* App bar / workspace header */}
-        <header className="h-16 border-b border-[var(--border-warm)] px-6 flex items-center justify-between bg-white/40 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileSidebarOpen(true)}
-              className="md:hidden p-1.5 hover:bg-[var(--border-light)] rounded-lg text-[var(--text-secondary)]"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="flex flex-col">
-              <span className="text-sm font-serif font-medium text-[var(--text-primary)]">
-                Chat E-CMC — Workspace
-              </span>
-              <span className="text-[9px] font-mono text-[var(--text-secondary)] truncate max-w-[200px] md:max-w-none">
-                {activeConvId ? `ID // ${activeConvId}` : "AUCUNE SESSION"}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[9px] font-mono text-[var(--cmc-success)] tracking-widest uppercase font-semibold">
-              RAG ACTIVE
-            </span>
-          </div>
-        </header>
-
-        {/* Message scroll pane */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 max-w-4xl w-full mx-auto pb-32">
-          {isLoadingHistory ? (
-            <div className="h-full w-full flex flex-col justify-center items-center">
-              <Loader2 className="h-8 w-8 text-[var(--cmc-teal)] animate-spin mb-2" />
-              <p className="text-xs font-mono text-[var(--text-secondary)]">Chargement de l'historique...</p>
-            </div>
-          ) : !activeConvId ? (
-            <div className="h-full w-full flex flex-col justify-center items-center text-center p-6 bg-white border border-[var(--border-warm)] rounded-2xl max-w-xl mx-auto my-auto max-h-[300px] shadow-xs">
-              <MessageSquare className="h-10 w-10 text-[var(--cmc-teal)]/30 mb-4" />
-              <h3 className="text-xl font-serif font-medium text-[var(--text-primary)]">Portail Chat E-CMC</h3>
-              <p className="text-[var(--text-secondary)] text-sm max-w-xs mt-2 leading-relaxed font-sans">
-                Veuillez créer ou sélectionner une session dans le panneau de gauche pour débuter l'exploration.
-              </p>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="h-full w-full flex flex-col justify-center items-center text-center p-8 bg-white border border-[var(--border-warm)] rounded-2xl max-w-xl mx-auto my-auto max-h-[300px] shadow-xs animate-fade-in">
-              <div className="h-12 w-12 bg-[var(--cmc-teal-subtle)] rounded-xl flex items-center justify-center mb-5 border border-[var(--cmc-teal)]/10 shadow-xs">
-                <FileText className="h-6 w-6 text-[var(--cmc-teal)]" />
-              </div>
-              <h3 className="text-2xl font-serif font-medium text-[var(--text-primary)]">Assistant RAG — Chat E-CMC</h3>
-              <p className="text-[var(--text-secondary)] text-sm max-w-sm mt-3 leading-relaxed font-sans">
-                Posez vos questions administratives ou pédagogiques. L'assistant formule des réponses sourcées à partir de la base documentaire de la Cité des Métiers et des Compétences.
-              </p>
-            </div>
-          ) : (
-            messages.map((msg, index) => {
-              const isUser = msg.role === "user";
-              const isTemp = msg.id.startsWith("assistant-temp");
-              return (
-                <div
-                  key={msg.id || index}
-                  className="flex flex-col animate-fade-in w-full"
+        {showCampusMap ? (
+          <CampusMapView onClose={() => setShowCampusMap(false)} />
+        ) : (
+          <>
+            {/* App bar / workspace header */}
+            <header className="h-16 border-b border-[var(--border-warm)] px-6 flex items-center justify-between bg-white/40 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setMobileSidebarOpen(true)}
+                  className="md:hidden p-1.5 hover:bg-[var(--border-light)] rounded-lg text-[var(--text-secondary)]"
                 >
-                  {/* Sender & Timestamp block */}
-                  <div className={`flex items-center gap-2 text-[9px] font-mono text-[var(--text-secondary)] mb-2 px-1 ${isUser ? "justify-end" : "justify-start"}`}>
-                    <span className="uppercase tracking-widest font-semibold text-[var(--text-primary)]">
-                      {isUser ? "// USER" : "// E-CMC ASSISTANT"}
-                    </span>
-                    <span>•</span>
-                    <span>
-                      {msg.created_at
-                        ? new Date(msg.created_at).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })
-                        : "EN STREAM"}
-                    </span>
+                  <Menu className="h-5 w-5" />
+                </button>
+                <div className="flex flex-col">
+                  <span className="text-sm font-serif font-medium text-[var(--text-primary)]">
+                    Chat E-CMC — Workspace
+                  </span>
+                  <span className="text-[9px] font-mono text-[var(--text-secondary)] truncate max-w-[200px] md:max-w-none">
+                    {activeConvId ? `ID // ${activeConvId}` : "AUCUNE SESSION"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[9px] font-mono text-[var(--cmc-success)] tracking-widest uppercase font-semibold">
+                  RAG ACTIVE
+                </span>
+              </div>
+            </header>
+
+            {/* Message scroll pane */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 max-w-4xl w-full mx-auto pb-32">
+              {isLoadingHistory ? (
+                <div className="h-full w-full flex flex-col justify-center items-center">
+                  <Loader2 className="h-8 w-8 text-[var(--cmc-teal)] animate-spin mb-2" />
+                  <p className="text-xs font-mono text-[var(--text-secondary)]">Chargement de l'historique...</p>
+                </div>
+              ) : !activeConvId ? (
+                <div className="h-full w-full flex flex-col justify-center items-center text-center p-6 bg-white border border-[var(--border-warm)] rounded-2xl max-w-xl mx-auto my-auto max-h-[300px] shadow-xs">
+                  <MessageSquare className="h-10 w-10 text-[var(--cmc-teal)]/30 mb-4" />
+                  <h3 className="text-xl font-serif font-medium text-[var(--text-primary)]">Portail Chat E-CMC</h3>
+                  <p className="text-[var(--text-secondary)] text-sm max-w-xs mt-2 leading-relaxed font-sans">
+                    Veuillez créer ou sélectionner une session dans le panneau de gauche pour débuter l'exploration.
+                  </p>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="h-full w-full flex flex-col justify-center items-center text-center p-8 bg-white border border-[var(--border-warm)] rounded-2xl max-w-xl mx-auto my-auto max-h-[300px] shadow-xs animate-fade-in">
+                  <div className="h-12 w-12 bg-[var(--cmc-teal-subtle)] rounded-xl flex items-center justify-center mb-5 border border-[var(--cmc-teal)]/10 shadow-xs">
+                    <FileText className="h-6 w-6 text-[var(--cmc-teal)]" />
                   </div>
-
-                  {/* Message body */}
-                  <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
-                    {isUser ? (
-                      // User Message: Clean white cards with faint shadows and borders
-                      <div className="max-w-[85%] md:max-w-[75%] rounded-2xl px-6 py-4 bg-white border border-[var(--border-warm)] text-[var(--text-primary)] shadow-xs font-sans text-sm rounded-tr-none">
-                        {msg.content}
+                  <h3 className="text-2xl font-serif font-medium text-[var(--text-primary)]">Assistant RAG — Chat E-CMC</h3>
+                  <p className="text-[var(--text-secondary)] text-sm max-w-sm mt-3 leading-relaxed font-sans">
+                    Posez vos questions administratives ou pédagogiques. L&apos;assistant formule des réponses sourcées à partir de la base documentaire de la Cité des Métiers et des Compétences.
+                  </p>
+                </div>
+              ) : (
+                messages.map((msg, index) => {
+                  const isUser = msg.role === "user";
+                  const isTemp = msg.id.startsWith("assistant-temp");
+                  return (
+                    <div
+                      key={msg.id || index}
+                      className="flex flex-col animate-fade-in w-full"
+                    >
+                      <div className={`flex items-center gap-2 text-[9px] font-mono text-[var(--text-secondary)] mb-2 px-1 ${isUser ? "justify-end" : "justify-start"}`}>
+                        <span className="uppercase tracking-widest font-semibold text-[var(--text-primary)]">
+                          {isUser ? "// USER" : "// E-CMC ASSISTANT"}
+                        </span>
+                        <span>•</span>
+                        <span>
+                          {msg.created_at
+                            ? new Date(msg.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })
+                            : "EN STREAM"}
+                        </span>
                       </div>
-                    ) : (
-                      // Assistant Message: BUBBLE-FREE directly flowing on the background! Extremely elegant Claude-style.
-                      <div className={`w-full font-sans text-sm leading-relaxed text-[var(--text-primary)] pl-1 pr-4 whitespace-pre-wrap select-text ${isTemp && isGenerating ? "typing-caret" : ""}`}>
-                        {msg.content}
+
+                      <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
+                        {isUser ? (
+                          <div className="max-w-[85%] md:max-w-[75%] rounded-2xl px-6 py-4 bg-white border border-[var(--border-warm)] text-[var(--text-primary)] shadow-xs font-sans text-sm rounded-tr-none">
+                            {msg.content}
+                          </div>
+                        ) : (
+                          <div className={`w-full font-sans text-sm leading-relaxed text-[var(--text-primary)] pl-1 pr-4 whitespace-pre-wrap select-text ${isTemp && isGenerating ? "typing-caret" : ""}`}>
+                            {msg.content}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Assistant controls: Footnote Citations & Feedback */}
-                  {!isUser && !isTemp && (
-                    <div className="mt-4 w-full pl-1 max-w-3xl flex flex-col gap-4">
-                      {/* citation toggle */}
-                      {msg.sources && msg.sources.length > 0 && (
-                        <div className="border border-[var(--border-warm)] rounded-xl bg-white overflow-hidden shadow-xs">
-                          <button
-                            onClick={() => toggleSources(msg.id)}
-                            className="w-full px-4 py-3 flex items-center justify-between text-xs text-[var(--text-primary)] hover:bg-[var(--panel-warm)]/40 transition cursor-pointer font-mono uppercase tracking-wider"
-                          >
-                            <span className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-[var(--cmc-teal)]" />
-                              Sources Documentaires ({msg.sources.length})
-                            </span>
-                            {expandedSources[msg.id] ? (
-                              <ChevronUp className="h-4 w-4 text-[var(--text-secondary)]" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4 text-[var(--text-secondary)]" />
-                            )}
-                          </button>
+                      {!isUser && !isTemp && (
+                        <div className="mt-4 w-full pl-1 max-w-3xl flex flex-col gap-4">
+                          {msg.sources && msg.sources.length > 0 && (
+                            <div className="border border-[var(--border-warm)] rounded-xl bg-white overflow-hidden shadow-xs">
+                              <button
+                                onClick={() => toggleSources(msg.id)}
+                                className="w-full px-4 py-3 flex items-center justify-between text-xs text-[var(--text-primary)] hover:bg-[var(--panel-warm)]/40 transition cursor-pointer font-mono uppercase tracking-wider"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-[var(--cmc-teal)]" />
+                                  Sources Documentaires ({msg.sources.length})
+                                </span>
+                                {expandedSources[msg.id] ? (
+                                  <ChevronUp className="h-4 w-4 text-[var(--text-secondary)]" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4 text-[var(--text-secondary)]" />
+                                )}
+                              </button>
 
-                          {expandedSources[msg.id] && (
-                            <div className="border-t border-[var(--border-warm)] p-4 space-y-4 bg-[var(--panel-warm)]/30 divide-y divide-[var(--border-light)] font-sans">
-                              {msg.sources.map((src, sIdx) => (
-                                <div key={sIdx} className="pt-4 first:pt-0">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="font-semibold text-[var(--text-primary)] font-serif">
-                                      {src.filename || src.meta?.filename || "Document Source"}
-                                    </span>
-                                    {src.score !== undefined && (
-                                      <span className="bg-[var(--cmc-teal-subtle)] text-[var(--cmc-teal-dark)] px-2.5 py-0.5 rounded-full text-[10px] border border-[var(--cmc-teal)]/10 font-mono font-medium">
-                                        MATCH: {(src.score * 100).toFixed(0)}%
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-[var(--text-secondary)] leading-relaxed italic bg-white p-3 rounded-xl border border-[var(--border-warm)] text-xs font-sans">
-                                    "{src.content || src.text}"
-                                  </p>
+                              {expandedSources[msg.id] && (
+                                <div className="border-t border-[var(--border-warm)] p-4 space-y-4 bg-[var(--panel-warm)]/30 divide-y divide-[var(--border-light)] font-sans">
+                                  {msg.sources.map((src, sIdx) => (
+                                    <div key={sIdx} className="pt-4 first:pt-0">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className="font-semibold text-[var(--text-primary)] font-serif">
+                                          {src.filename || src.meta?.filename || "Document Source"}
+                                        </span>
+                                        {src.score !== undefined && (
+                                          <span className="bg-[var(--cmc-teal-subtle)] text-[var(--cmc-teal-dark)] px-2.5 py-0.5 rounded-full text-[10px] border border-[var(--cmc-teal)]/10 font-mono font-medium">
+                                            MATCH: {(src.score * 100).toFixed(0)}%
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[var(--text-secondary)] leading-relaxed italic bg-white p-3 rounded-xl border border-[var(--border-warm)] text-xs font-sans">
+                                        &quot;{src.content || src.text}&quot;
+                                      </p>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              )}
                             </div>
                           )}
+
+                          <div className="flex items-center justify-between px-1">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleRating(msg.id, true)}
+                                className={`p-1.5 rounded-lg border transition cursor-pointer ${msg.rating === true
+                                  ? "bg-emerald-50 border-emerald-300 text-[var(--cmc-success)]"
+                                  : "border-[var(--border-warm)] bg-white hover:bg-[var(--panel-warm)]/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                  }`}
+                                title="Réponse utile"
+                              >
+                                <ThumbsUp className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleRating(msg.id, false)}
+                                className={`p-1.5 rounded-lg border transition cursor-pointer ${msg.rating === false
+                                  ? "bg-orange-50 border-orange-300 text-[var(--cmc-danger)]"
+                                  : "border-[var(--border-warm)] bg-white hover:bg-[var(--panel-warm)]/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                  }`}
+                                title="Réponse incorrecte"
+                              >
+                                <ThumbsDown className="h-3.5 w-3.5" />
+                              </button>
+
+                              <button
+                                onClick={() => openFeedbackTextDialog(msg.id)}
+                                className={`text-[11px] font-mono uppercase tracking-wider hover:underline transition cursor-pointer ${msg.feedback
+                                  ? "text-[var(--cmc-teal)]"
+                                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                  }`}
+                              >
+                                {msg.feedback ? "// AVIS ENREGISTRÉ" : "// COMPLÉTER LA RÉPONSE"}
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       )}
-
-                      {/* feedback block */}
-                      <div className="flex items-center justify-between px-1">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleRating(msg.id, true)}
-                            className={`p-1.5 rounded-lg border transition cursor-pointer ${msg.rating === true
-                              ? "bg-emerald-50 border-emerald-300 text-[var(--cmc-success)]"
-                              : "border-[var(--border-warm)] bg-white hover:bg-[var(--panel-warm)]/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                              }`}
-                            title="Réponse utile"
-                          >
-                            <ThumbsUp className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleRating(msg.id, false)}
-                            className={`p-1.5 rounded-lg border transition cursor-pointer ${msg.rating === false
-                              ? "bg-orange-50 border-orange-300 text-[var(--cmc-danger)]"
-                              : "border-[var(--border-warm)] bg-white hover:bg-[var(--panel-warm)]/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                              }`}
-                            title="Réponse incorrecte"
-                          >
-                            <ThumbsDown className="h-3.5 w-3.5" />
-                          </button>
-
-                          <button
-                            onClick={() => openFeedbackTextDialog(msg.id)}
-                            className={`text-[11px] font-mono uppercase tracking-wider hover:underline transition cursor-pointer ${msg.feedback
-                              ? "text-[var(--cmc-teal)]"
-                              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                              }`}
-                          >
-                            {msg.feedback ? "// AVIS ENREGISTRÉ" : "// COMPLÉTER LA RÉPONSE"}
-                          </button>
-                        </div>
-                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Console */}
-        {activeConvId && (
-          <footer className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[var(--bg-warm)] via-[var(--bg-warm)]/90 to-transparent">
-            <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto relative bg-white border border-[var(--border-warm)] rounded-2xl shadow-md p-1.5 flex items-center gap-2 hover-lift">
-              <input
-                type="text"
-                maxLength={512}
-                disabled={isGenerating}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                className="flex-1 bg-transparent border-0 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-0 py-3 pl-4 pr-12 text-sm font-sans"
-                placeholder={
-                  isGenerating
-                    ? "Génération RAG en cours..."
-                    : "Rechercher un document ou poser une question..."
-                }
-              />
-              <button
-                type="submit"
-                disabled={isGenerating || !inputText.trim()}
-                className="p-2.5 bg-[var(--text-primary)] hover:bg-[var(--cmc-teal)] text-white rounded-xl transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
-            <div className="max-w-3xl mx-auto flex items-center justify-between mt-2 px-2 text-[9px] font-mono text-[var(--text-secondary)] uppercase tracking-widest">
-              <span>Limite // 512 caract.</span>
-              <span>Moteur // Qwen3 30B RAG</span>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
             </div>
-          </footer>
+
+            {/* Input Console */}
+            {activeConvId && (
+              <footer className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[var(--bg-warm)] via-[var(--bg-warm)]/90 to-transparent">
+                <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto relative bg-white border border-[var(--border-warm)] rounded-2xl shadow-md p-1.5 flex items-center gap-2 hover-lift">
+                  <input
+                    type="text"
+                    maxLength={512}
+                    disabled={isGenerating}
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    className="flex-1 bg-transparent border-0 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-0 py-3 pl-4 pr-12 text-sm font-sans"
+                    placeholder={
+                      isGenerating
+                        ? "Génération RAG en cours..."
+                        : "Rechercher un document ou poser une question..."
+                    }
+                  />
+                  <button
+                    type="submit"
+                    disabled={isGenerating || !inputText.trim()}
+                    className="p-2.5 bg-[var(--text-primary)] hover:bg-[var(--cmc-teal)] text-white rounded-xl transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </form>
+                <div className="max-w-3xl mx-auto flex items-center justify-between mt-2 px-2 text-[9px] font-mono text-[var(--text-secondary)] uppercase tracking-widest">
+                  <span>Limite // 512 caract.</span>
+                  <span>Moteur // Qwen3 30B RAG</span>
+                </div>
+              </footer>
+            )}
+          </>
         )}
       </main>
 
