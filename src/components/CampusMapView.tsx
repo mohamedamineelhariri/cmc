@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, X, MapPin, ExternalLink } from "lucide-react";
 
 interface Section {
   id: string;
@@ -35,7 +35,7 @@ const SECTIONS: Section[] = [
   { id: "langues-softskills", name: "Langues & Soft Skills", desc: "Centre de langues et compétences comportementales.", lat: 32.311169, lng: -6.440507, icon: "🗣️" },
   { id: "coworking", name: "Espace Coworking", desc: "Travail collaboratif pour les stagiaires.", lat: 32.311563, lng: -6.440673, icon: "💻" },
   { id: "incubateur", name: "Incubateur", desc: "Accompagnement de startups et projets entrepreneuriaux.", lat: 32.311432, lng: -6.440896, icon: "🚀" },
-  { id: "cop", name: "Centre d'Orientation Professionnelle (COP)", desc: "Information, orientation et accompagnement des jeunes.", lat: 32.310845, lng: -6.440661, icon: "🧭" },
+  { id: "cop", name: "COP", desc: "Centre d'Orientation Professionnelle.", lat: 32.310845, lng: -6.440661, icon: "🧭" },
   { id: "mediatheque", name: "Médiathèque", desc: "Ressources documentaires et numériques.", lat: 32.311017, lng: -6.440634, icon: "📚" },
   { id: "parking-pro", name: "Parking professionnel", desc: "Parking réservé au personnel.", lat: 32.309903, lng: -6.440403, icon: "🅿️" },
   { id: "parking-public", name: "Parking public", desc: "Parking visiteurs et public.", lat: 32.310676, lng: -6.441261, icon: "🅿️" },
@@ -46,22 +46,6 @@ const SECTIONS: Section[] = [
   { id: "cours-soir", name: "Salles cours du soir", desc: "Salles dédiées aux formations du soir.", lat: 32.311068, lng: -6.440741, icon: "📖" },
 ];
 
-// Campus perimeter polygon (approximate boundary from building positions)
-const PERIMETER: [number, number][] = [
-  [32.3118, -6.4419],
-  [32.3124, -6.4408],
-  [32.3126, -6.4393],
-  [32.3124, -6.4378],
-  [32.3112, -6.4378],
-  [32.3104, -6.4380],
-  [32.3096, -6.4380],
-  [32.3094, -6.4400],
-  [32.3095, -6.4410],
-  [32.3098, -6.4417],
-  [32.3103, -6.4419],
-  [32.3110, -6.4420],
-];
-
 interface CampusMapViewProps {
   standalone?: boolean;
   onClose?: () => void;
@@ -70,6 +54,16 @@ interface CampusMapViewProps {
 export default function CampusMapView({ standalone, onClose }: CampusMapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<Record<string, any>>({});
+
+  const focusMarker = useCallback((sectionId: string) => {
+    const marker = markersRef.current[sectionId];
+    const map = mapInstanceRef.current;
+    if (marker && map) {
+      map.flyTo(marker.getLatLng(), 19, { duration: 0.6 });
+      setTimeout(() => marker.openPopup(), 300);
+    }
+  }, []);
 
   useEffect(() => {
     if (mapInstanceRef.current) return;
@@ -83,25 +77,23 @@ export default function CampusMapView({ standalone, onClose }: CampusMapViewProp
         17
       );
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+      L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        attribution: "Tiles &copy; Esri",
         maxZoom: 19,
       }).addTo(map);
 
-      // Draw campus perimeter
-      L.polygon(PERIMETER, {
-        color: "#3A8A98",
-        weight: 2,
-        opacity: 0.8,
-        fillColor: "#3A8A98",
-        fillOpacity: 0.1,
+      L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+        attribution: "&copy; Esri",
+        maxZoom: 19,
       }).addTo(map);
 
-      // Place markers
       SECTIONS.forEach((s) => {
-        const popup = `<div style="min-width:180px"><h4 style="margin:0 0 4px;font-size:14px">${s.icon} ${s.name}</h4><p style="margin:0;font-size:13px;color:#555">${s.desc}</p></div>`;
-        L.marker([s.lat, s.lng]).addTo(map).bindPopup(popup);
+        const marker = L.marker([s.lat, s.lng])
+          .addTo(map)
+          .bindPopup(
+            `<div style="min-width:180px"><h4 style="margin:0 0 4px;font-size:14px">${s.icon} ${s.name}</h4><p style="margin:0;font-size:13px;color:#555">${s.desc}</p></div>`
+          );
+        markersRef.current[s.id] = marker;
       });
 
       mapInstanceRef.current = map;
@@ -130,10 +122,8 @@ export default function CampusMapView({ standalone, onClose }: CampusMapViewProp
     };
   }, []);
 
-  const handleClose = onClose || (() => {});
-
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[var(--bg-warm)]">
       {standalone && (
         <header className="bg-[var(--text-primary)] text-white px-6 py-6 md:py-8 text-center relative shrink-0">
           <div className="absolute top-4 left-4">
@@ -158,13 +148,13 @@ export default function CampusMapView({ standalone, onClose }: CampusMapViewProp
       )}
 
       {!standalone && (
-        <div className="flex items-center justify-between px-6 py-3 border-b border-[var(--border-warm)] bg-white/40 shrink-0">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-[var(--border-warm)] bg-white/50 shrink-0">
           <span className="font-mono text-[9px] uppercase tracking-widest text-[var(--text-secondary)]">
-            // PLAN DU CAMPUS
+            // PLAN DU CAMPUS &middot; {SECTIONS.length} POINTS
           </span>
           <button
-            onClick={handleClose}
-            className="p-1.5 hover:bg-[var(--border-light)] rounded-lg text-[var(--text-secondary)] cursor-pointer"
+            onClick={onClose}
+            className="p-1.5 hover:bg-[var(--border-light)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -173,60 +163,55 @@ export default function CampusMapView({ standalone, onClose }: CampusMapViewProp
 
       <div
         ref={mapRef}
-        className="w-full min-h-[300px] flex-1 bg-[var(--border-warm)]"
-        style={standalone ? { height: "400px" } : undefined}
+        className="w-full bg-[var(--border-warm)]"
+        style={standalone ? { height: "520px" } : { flex: "1 1 0%", minHeight: "300px" }}
       />
 
-      <div className="overflow-y-auto p-6 shrink-0">
-        <div className="max-w-6xl mx-auto">
-          {!standalone && (
-            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg text-sm text-amber-800 mb-6">
-              <strong>&#9888; Périmètre approximatif.</strong> Les positions
-              des bâtiments proviennent de Google Maps. Le tracé du périmètre
-              est estimé d&apos;après les bâtiments.
-            </div>
-          )}
+      <div className="overflow-y-auto shrink-0 border-t border-[var(--border-warm)] bg-[var(--bg-warm)]">
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-sm font-mono uppercase tracking-widest text-[var(--text-secondary)]">
+              // INFRASTRUCTURES &amp; SERVICES
+              <span className="ml-2 text-[var(--cmc-teal)] font-semibold">({SECTIONS.length})</span>
+            </h2>
+            <span className="text-[10px] font-mono text-[var(--text-muted)]">
+              Cliquez sur une carte pour zoomer
+            </span>
+          </div>
 
-          {standalone && (
-            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg text-sm text-amber-800 mb-8">
-              <strong>&#9888; Périmètre approximatif.</strong> Les positions
-              des bâtiments proviennent de Google Maps. Le tracé du périmètre
-              est estimé d&apos;après les bâtiments.
-            </div>
-          )}
-
-          <h2 className="text-lg font-serif font-medium mb-4 pb-2 border-b-2 border-[var(--cmc-navy)]">
-            &#127963; Infrastructures &amp; Services ({SECTIONS.length})
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {SECTIONS.map((s) => (
-              <div
+              <button
                 key={s.id}
-                className="bg-white rounded-xl overflow-hidden shadow-sm border border-[var(--border-warm)] hover:shadow-md hover:-translate-y-0.5 transition-all"
+                onClick={() => focusMarker(s.id)}
+                className="group bg-white border border-[var(--border-warm)] rounded-xl p-4 text-left transition-all hover:shadow-md hover:-translate-y-0.5 hover:border-[var(--cmc-teal)]/30 cursor-pointer active:scale-[0.98]"
               >
-                <div className="h-32 bg-[var(--panel-warm)] flex items-center justify-center text-3xl opacity-70 relative">
-                  <span className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-md">
-                    {s.icon} {s.name}
-                  </span>
-                </div>
-                <div className="p-3">
-                  <p className="text-xs text-[var(--text-secondary)] mb-1">
-                    {s.desc}
-                  </p>
-                  <div className="text-[10px] text-[var(--text-muted)] font-mono mb-1">
-                    📍 {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
+                <div className="flex items-start gap-3">
+                  <span className="text-xl shrink-0 mt-0.5">{s.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-serif font-medium text-sm text-[var(--text-primary)] group-hover:text-[var(--cmc-teal)] transition-colors truncate">
+                      {s.name}
+                    </h3>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed line-clamp-2">
+                      {s.desc}
+                    </p>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--border-light)]">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                        {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
+                      </span>
+                      <a
+                        href={`https://www.google.com/maps?q=${s.lat},${s.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 text-[10px] font-mono text-[var(--cmc-teal)] hover:underline shrink-0"
+                      >
+                        Maps <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
                   </div>
-                  <a
-                    href={`https://www.google.com/maps?q=${s.lat},${s.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-[var(--cmc-teal)] font-semibold hover:underline inline-flex items-center gap-1"
-                  >
-                    Google Maps &rarr;
-                  </a>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
