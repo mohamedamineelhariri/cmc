@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, X, MapPin, ExternalLink } from "lucide-react";
+import { ArrowLeft, X, ExternalLink, GripHorizontal } from "lucide-react";
 
 interface Section {
   id: string;
@@ -55,6 +55,10 @@ export default function CampusMapView({ standalone, onClose }: CampusMapViewProp
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<Record<string, any>>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+
+  const [mapRatio, setMapRatio] = useState(0.55);
 
   const focusMarker = useCallback((sectionId: string) => {
     const marker = markersRef.current[sectionId];
@@ -77,13 +81,8 @@ export default function CampusMapView({ standalone, onClose }: CampusMapViewProp
         17
       );
 
-      L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-        attribution: "Tiles &copy; Esri",
-        maxZoom: 19,
-      }).addTo(map);
-
-      L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
-        attribution: "&copy; Esri",
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; <a href=\"https://openstreetmap.org/copyright\">OpenStreetMap</a>",
         maxZoom: 19,
       }).addTo(map);
 
@@ -122,8 +121,48 @@ export default function CampusMapView({ standalone, onClose }: CampusMapViewProp
     };
   }, []);
 
+  const handleDividerDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      setMapRatio(Math.max(0.2, Math.min(0.8, y / rect.height)));
+    };
+    const handleUp = () => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      const map = mapInstanceRef.current;
+      if (map) map.invalidateSize();
+    };
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const map = mapInstanceRef.current;
+      if (map) map.invalidateSize();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [mapRatio]);
+
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-warm)]">
+    <div ref={containerRef} className="flex flex-col h-full bg-[var(--bg-warm)]">
       {standalone && (
         <header className="bg-[var(--text-primary)] text-white px-6 py-6 md:py-8 text-center relative shrink-0">
           <div className="absolute top-4 left-4">
@@ -161,13 +200,20 @@ export default function CampusMapView({ standalone, onClose }: CampusMapViewProp
         </div>
       )}
 
-      <div
-        ref={mapRef}
-        className="w-full bg-[var(--border-warm)]"
-        style={standalone ? { height: "520px" } : { flex: "1 1 0%", minHeight: "300px" }}
-      />
+      <div className="flex flex-col min-h-0" style={{ flex: `${mapRatio} 1 0%` }}>
+        <div ref={mapRef} className="w-full flex-1 bg-[var(--border-warm)]" />
+      </div>
 
-      <div className="overflow-y-auto shrink-0 border-t border-[var(--border-warm)] bg-[var(--bg-warm)]">
+      <div
+        onMouseDown={handleDividerDown}
+        className="h-1.5 shrink-0 cursor-row-resize bg-[var(--border-warm)] hover:bg-[var(--cmc-teal)]/30 active:bg-[var(--cmc-teal)]/50 transition-colors flex items-center justify-center relative"
+      >
+        <span className="absolute bg-[var(--border-warm)] rounded-full px-2 py-0.5 text-[8px] font-mono text-[var(--text-muted)]">
+          <GripHorizontal className="h-3 w-3" />
+        </span>
+      </div>
+
+      <div className="overflow-y-auto min-h-0" style={{ flex: `${1 - mapRatio} 1 0%` }}>
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-sm font-mono uppercase tracking-widest text-[var(--text-secondary)]">
