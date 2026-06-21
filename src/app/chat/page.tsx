@@ -5,6 +5,8 @@ import { MessageSquare, Send, Loader2, FileText, ChevronDown, ChevronUp, ThumbsU
 import { matchLocation, SECTIONS } from "@/data/sections";
 import CampusMapView from "@/components/CampusMapView";
 import LayoutWrapper from "@/app/layout-wrapper";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   id: string;
@@ -86,7 +88,7 @@ export default function ChatPage() {
             if (data === "[DONE]") continue;
             try {
               const parsed = JSON.parse(data);
-              const chunk = parsed.content || parsed.choices?.[0]?.delta?.content || "";
+              const chunk = (parsed.content || parsed.choices?.[0]?.delta?.content || "").replace(/\[NEWLINE\]/g, "\n");
               accumulated += chunk;
               setMessages((prev) => {
                 const copy = [...prev];
@@ -189,8 +191,10 @@ export default function ChatPage() {
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Réflexion en cours...
                       </span>
-                    ) : (
+                    ) : isUser ? (
                       msg.content
+                    ) : (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                     )}
                   </div>
 

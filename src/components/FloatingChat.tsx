@@ -2,6 +2,8 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { MessageSquare, X, Send, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,7 +59,7 @@ export default function FloatingChat() {
             if (data === "[DONE]") continue;
             try {
               const parsed = JSON.parse(data);
-              const chunk = parsed.content || parsed.choices?.[0]?.delta?.content || "";
+              const chunk = (parsed.content || parsed.choices?.[0]?.delta?.content || "").replace(/\[NEWLINE\]/g, "\n");
               accumulated += chunk;
               setMessages((prev) => {
                 const copy = [...prev];
@@ -111,12 +113,16 @@ export default function FloatingChat() {
                       : "bg-[var(--panel-warm)] text-[var(--text-primary)] rounded-tl-none"
                   }`}
                 >
-                  {msg.content || (isGenerating && i === messages.length - 1 ? (
+                  {msg.role === "user" ? (
+                    msg.content
+                  ) : isGenerating && i === messages.length - 1 && !msg.content ? (
                     <span className="inline-flex items-center gap-1">
                       <Loader2 className="h-3 w-3 animate-spin" />
                       Réflexion...
                     </span>
-                  ) : null)}
+                  ) : msg.content ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  ) : null}
                 </div>
               </div>
             ))}
