@@ -30,10 +30,15 @@ export default function FloatingChat() {
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     try {
+      // Build conversation history for context
+      const history = messages
+        .filter((m, i) => !(i === 0 && m.role === "assistant"))  // skip welcome
+        .map(m => ({ role: m.role, content: m.content }));
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/chatsystem/public/chat?stream=true`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg }),
+        body: JSON.stringify({ message: userMsg, history }),
       });
 
       if (!res.ok) throw new Error("Request failed");

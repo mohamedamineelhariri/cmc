@@ -42,9 +42,24 @@ export default function ChatPage() {
   const [showCampusMap, setShowCampusMap] = useState(false);
   const [focusMarkerId, setFocusMarkerId] = useState<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const threshold = 150;
+      isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   const sendMessage = async (query: string) => {
@@ -59,10 +74,15 @@ export default function ChatPage() {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
     try {
+      // Build conversation history for context
+      const history = messages
+        .filter(m => m.id !== "welcome")
+        .map(m => ({ role: m.role, content: m.content }));
+
       const res = await fetch(`${backendUrl}/chatsystem/public/chat?stream=true`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: query }),
+        body: JSON.stringify({ message: query, history }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -174,7 +194,7 @@ export default function ChatPage() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl w-full mx-auto">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl w-full mx-auto">
             {messages.map((msg, i) => {
               const isUser = msg.role === "user";
               const isTemp = msg.id.startsWith("assistant") && i === messages.length - 1 && isGenerating && !msg.content;
