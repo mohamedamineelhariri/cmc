@@ -41,6 +41,7 @@ export default function VieEtudiantePage() {
 
     (async () => {
       if (!mounted || !mapRef.current) return;
+      if ((mapRef.current as any)._leaflet_id) return;
       const L = await import("leaflet");
 
       const map = L.map(mapRef.current, {
