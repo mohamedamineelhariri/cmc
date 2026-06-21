@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import LoadingScreen from "@/components/LoadingScreen";
 
 export const metadata: Metadata = {
   title: "CMC Béni Mellal-Khénifra — Cité des Métiers et des Compétences | OFPPT",
@@ -23,7 +22,6 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-[var(--bg-warm)] font-sans">
-        <LoadingScreen />
         {children}
       </body>
     </html>
