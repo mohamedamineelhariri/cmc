@@ -4,8 +4,9 @@ import React from "react";
 import Link from "next/link";
 import {
   Handshake, Rocket, Building2, GraduationCap, Trophy, Plane,
-  Home, ArrowRight, Users,
+  Home, ArrowRight, Users, Sparkles,
 } from "lucide-react";
+import Reveal from "@/components/Reveal";
 import LayoutWrapper from "@/app/layout-wrapper";
 
 const PARTNERS = [
@@ -192,29 +193,29 @@ export default function PartenariatsPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-[var(--cmc-navy)] text-white pb-24 md:pb-32">
-        <div className="mx-auto px-6 lg:px-10 py-16 md:py-20 text-center" style={{ maxWidth: "var(--max-width)" }}>
-          <h2 className="text-3xl md:text-4xl font-serif font-bold">
+      <section className="bg-[#32acc1] text-white py-24 md:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
+        <div className="pointer-events-none absolute -top-28 -left-24 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+        <div className="mx-auto px-6 lg:px-10 text-center relative" style={{ maxWidth: "var(--max-width)" }}>
+          <Reveal as="span" className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/25 bg-white/10 text-[11px] font-mono uppercase tracking-[0.18em] text-white mb-6">
+            <Sparkles className="h-3.5 w-3.5" /> Rejoignez la CMC
+          </Reveal>
+          <Reveal as="h2" variant="scale" className="font-serif font-extrabold tracking-tight leading-[1.02] text-white text-4xl md:text-6xl max-w-3xl mx-auto">
             Entreprise ou partenaire&nbsp;?
-          </h2>
-          <p className="text-white/70 mt-3 max-w-xl mx-auto text-[15px]">
+          </Reveal>
+          <Reveal as="p" delay={120} className="text-white/80 max-w-xl mx-auto mt-6 mb-10 text-base md:text-lg leading-relaxed">
             Collaborez avec la CMC pour le recrutement, les stages, ou des projets d&apos;innovation.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-4 justify-center">
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 bg-[var(--cmc-teal)] hover:bg-[var(--cmc-teal-dark)] text-white px-8 py-4 rounded-none font-medium text-sm transition active:scale-95"
-            >
-              Nous contacter <ArrowRight className="h-4 w-4" />
+          </Reveal>
+          <Reveal delay={220} className="flex flex-wrap justify-center gap-4">
+            <Link href="/contact" className="group inline-flex items-center gap-2 bg-white text-[#1b6f7d] hover:bg-white/90 px-7 py-4 rounded-none font-semibold text-sm transition-colors active:scale-95">
+              Nous contacter <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <Link
-              href="/programs"
-              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-8 py-4 rounded-none font-medium text-sm transition"
-            >
+            <Link href="/programs" className="inline-flex items-center gap-2 bg-white/10 border border-white/30 text-white px-7 py-4 rounded-none font-medium text-sm hover:bg-white/20 transition active:scale-95">
               Voir les formations
             </Link>
-          </div>
+          </Reveal>
         </div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-6xl h-px bg-white/20" />
       </section>
     </LayoutWrapper>
   );
