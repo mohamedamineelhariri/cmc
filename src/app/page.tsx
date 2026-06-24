@@ -529,11 +529,10 @@ export default function HomePage() {
                 <button
                   key={tab}
                   onClick={() => setNewsFilter(tab)}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-                    newsFilter === tab
-                      ? "bg-white text-[var(--text-primary)] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.2)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  }`}
+                  className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${newsFilter === tab
+                    ? "bg-white text-[var(--text-primary)] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.2)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
                 >
                   {tab}
                 </button>
